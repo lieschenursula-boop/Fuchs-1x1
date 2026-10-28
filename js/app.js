@@ -10,6 +10,7 @@
   const TASKS_PER_ROUND = 10;   // Aufgaben pro Stufe
   const TEST_TASKS = 20;        // Aufgaben im Fuchs-Test
   const TEST_LIVES = 3;         // Leben im Fuchs-Test
+  const TASK_TIME_MS = 5000;    // Zeit pro Aufgabe (unsichtbarer Timer); läuft sie ab, zählt die Aufgabe als falsch
 
   const LEVELS = [
     { n: 1, name: 'Fuchsjunges',    rows: [1, 2, 5, 10],                 chips: ['1er', '2er', '5er', '10er'] },
@@ -291,10 +292,12 @@
     const test = R.mode === 'test';
     R.input = '';
     R.locked = false;
+    R.timedOut = false;
     R.tipLevel = 0;
     const keys = [1, 2, 3, 4, 5, 6, 7, 8, 9].map((d) => `<button class="key" data-key="${d}" aria-label="${d}">${d}</button>`).join('');
     show(
       topbarHtml(R) + progressHtml(R, true) +
+      `<div class="timer" id="timer" aria-hidden="true" style="--dur:${TASK_TIME_MS}ms"><div class="track"><i></i></div></div>` +
       '<div class="qcard">' +
       `<div class="q" aria-label="${t.a} mal ${t.b}">${t.a} × ${t.b}</div>` +
       '<div class="answer-row"><span class="eq">=</span><div class="answer" id="answer" role="status"></div></div>' +
@@ -311,6 +314,7 @@
       test
     );
     renderAnswer();
+    startTaskTimer();
   }
 
   function renderAnswer() {
@@ -345,9 +349,9 @@
     for (let r = 1; r <= t.a; r++) rows.push(`<div class="dotrow"><div class="d">${'<i></i>'.repeat(per)}</div><b>${r * per}</b></div>`);
     show(
       topbarHtml(R) + progressHtml(R, false) +
-      `<div class="verdict">${ICON.cross}<div><small>Nicht ganz! Richtig ist:</small><div class="big">${t.a} × ${t.b} = ${t.a * t.b}</div></div></div>` +
+      `<div class="verdict">${ICON.cross}<div><small>${R.timedOut ? 'Zu langsam! Richtig ist:' : 'Nicht ganz! Richtig ist:'}</small><div class="big">${t.a} × ${t.b} = ${t.a * t.b}</div></div></div>` +
       `<div class="explain-fox">${foxHead('think', 'Der Fuchs erklärt')}` +
-      `<div class="bubble">Kein Problem! <b>${t.a} × ${t.b}</b> heißt: ${t.a} Mal die ${t.b}. Schau mal:</div></div>` +
+      `<div class="bubble">${R.timedOut ? 'Die Zeit war um, kein Problem!' : 'Kein Problem!'} <b>${t.a} × ${t.b}</b> heißt: ${t.a} Mal die ${t.b}. Schau mal:</div></div>` +
       `<div class="dots" style="--dot:${dot}px"><div class="cap">${t.a === 1 ? '1 Reihe' : t.a + ' Reihen'} mit je ${t.b} ${t.b === 1 ? 'Punkt' : 'Punkten'}</div>${rows.join('')}</div>` +
       `<div class="actions"><button class="btn btn-primary big" data-act="next"><span>Weiter</span>${ICON.next}</button></div>`,
       'task'
@@ -437,7 +441,7 @@
       '<h1>Alle Leben weg</h1>' +
       `<p class="lead">Du hast ${R.correct} von ${TEST_TASKS} Aufgaben geschafft. ${R.correct >= 13 ? 'Das war schon richtig stark!' : R.correct >= 5 ? 'Das ist ein guter Anfang!' : 'Übe noch ein bisschen, dann klappt es!'}</p>` +
       progressHtml(R, false) +
-      `<div class="last"><small>Die letzte Aufgabe</small><div class="big">${w.a} × ${w.b} = ${w.a * w.b}</div><div class="you">Deine Antwort war ${w.given}</div></div>` +
+      `<div class="last"><small>Die letzte Aufgabe</small><div class="big">${w.a} × ${w.b} = ${w.a * w.b}</div><div class="you">${w.given === null ? 'Die Zeit war abgelaufen' : 'Deine Antwort war ' + w.given}</div></div>` +
       '<div class="actions"><button class="btn btn-primary big" data-act="start-test"><span>Nochmal versuchen</span></button>' +
       '<button class="btn btn-secondary" data-act="levels">Erst noch üben</button></div>',
       'night over',
@@ -459,8 +463,97 @@
   /* ================= 7  Ablauf ================= */
   let round = null;
 
-  function cancelTimer() { if (round && round.timer) { clearTimeout(round.timer); round.timer = null; } }
+  function cancelTimer() {
+    if (round && round.timer) { clearTimeout(round.timer); round.timer = null; }
+    stopTaskTimer();
+  }
   function later(fn, ms) { cancelTimer(); round.timer = setTimeout(() => { round && (round.timer = null); fn(); }, ms); }
+
+  /* ---- Unsichtbarer Aufgaben-Timer (pausiert bei Tipp, Dialog und Wechsel der App) ---- */
+  const timerBar = () => screenEl.querySelector('#timer');
+  function stopTaskTimer() {
+    const R = round;
+    if (!R) return;
+    if (R.ttId) clearTimeout(R.ttId);
+    R.ttId = null;
+    R.ttPaused = false;
+    const bar = timerBar();          // Balken einfrieren, sobald die Aufgabe beantwortet ist
+    if (bar) bar.classList.add('paused');
+  }
+  function runTaskTimer() {
+    const R = round;
+    if (!R || R.locked || R.ttLeft <= 0) return;
+    R.ttStart = Date.now();
+    R.ttPaused = false;
+    R.ttId = setTimeout(onTimeUp, R.ttLeft);
+    const bar = timerBar();
+    if (bar) bar.classList.remove('paused');
+  }
+  function startTaskTimer() {
+    if (!round) return;
+    stopTaskTimer();
+    round.ttLeft = TASK_TIME_MS;
+    runTaskTimer();
+  }
+  function pauseTaskTimer() {
+    const R = round;
+    if (!R || !R.ttId) return;
+    clearTimeout(R.ttId);
+    R.ttId = null;
+    R.ttLeft = Math.max(0, R.ttLeft - (Date.now() - R.ttStart));
+    R.ttPaused = true;
+    const bar = timerBar();
+    if (bar) bar.classList.add('paused');
+  }
+  function resumeTaskTimer() {
+    if (round && round.ttPaused && !round.locked) runTaskTimer();
+  }
+
+  // Zeit abgelaufen: Aufgabe zählt als falsch
+  function onTimeUp() {
+    const R = round;
+    if (!R || R.locked) return;
+    R.ttId = null;
+    const t = R.tasks[R.i];
+    R.results[R.i] = false;
+    R.locked = true;
+    R.timedOut = true;
+    const answerEl = $('#answer');
+    if (answerEl) answerEl.classList.add('bad');
+    renderAnswer();
+    const fb = $('#feedback');
+    if (R.mode === 'practice') {
+      if (fb) { fb.textContent = 'Zu langsam!'; fb.className = 'feedback bad'; }
+      if (navigator.vibrate) navigator.vibrate(80);
+      later(explainScreen, 900);
+    } else {
+      testMiss(t, null, `Zu langsam! Richtig wäre ${t.a * t.b}`);
+    }
+  }
+
+  // Fuchs-Test: Fehler (falsche Antwort oder Zeit abgelaufen) kostet ein Leben
+  function testMiss(t, given, message) {
+    const R = round;
+    R.lives--;
+    R.lastWrong = { a: t.a, b: t.b, given };
+    if (navigator.vibrate) navigator.vibrate(120);
+    const fb = $('#feedback');
+    if (fb) { fb.textContent = message; fb.className = 'feedback bad'; }
+    const hearts = $('#hearts');
+    if (hearts) {
+      hearts.innerHTML = [0, 1, 2].map((i) => heartSvg(i < R.lives, 26)).join('');
+      hearts.setAttribute('aria-label', `${R.lives} von ${TEST_LIVES} Leben übrig`);
+      const lost = hearts.children[R.lives];
+      if (lost) lost.classList.add('heart-pop');
+    }
+    later(() => {
+      if (R.lives <= 0) {
+        save.testBest = Math.max(save.testBest, R.correct);
+        persist();
+        testOverScreen();
+      } else nextTask();
+    }, 1500);
+  }
 
   function startPractice(levelIndex) {
     cancelTimer();
@@ -508,6 +601,7 @@
     const t = R.tasks[R.i];
     const given = parseInt(R.input, 10);
     const ok = given === t.a * t.b;
+    stopTaskTimer();
     R.results[R.i] = ok;
     R.locked = true;
     if (ok) R.correct++;
@@ -530,24 +624,7 @@
       fb.textContent = 'Richtig!'; fb.className = 'feedback ok';
       later(nextTask, 650);
     } else {
-      R.lives--;
-      R.lastWrong = { a: t.a, b: t.b, given };
-      if (navigator.vibrate) navigator.vibrate(120);
-      fb.textContent = `Richtig wäre ${t.a * t.b}`; fb.className = 'feedback bad';
-      const hearts = $('#hearts');
-      if (hearts) {
-        hearts.innerHTML = [0, 1, 2].map((i) => heartSvg(i < R.lives, 26)).join('');
-        hearts.setAttribute('aria-label', `${R.lives} von ${TEST_LIVES} Leben übrig`);
-        const lost = hearts.children[R.lives];
-        if (lost) lost.classList.add('heart-pop');
-      }
-      later(() => {
-        if (R.lives <= 0) {
-          save.testBest = Math.max(save.testBest, R.correct);
-          persist();
-          testOverScreen();
-        } else nextTask();
-      }, 1500);
+      testMiss(t, given, `Richtig wäre ${t.a * t.b}`);
     }
   }
 
@@ -572,7 +649,7 @@
       const yes = modalBtn.dataset.modal === 'yes';
       const fn = modalEl._onYes;
       closeDialog();
-      if (yes && fn) fn();
+      if (yes && fn) fn(); else resumeTaskTimer();
       return;
     }
     if (!modalEl.hidden) return;
@@ -596,7 +673,7 @@
       case 'submit': submit(); break;
       case 'next': nextTask(); break;
       case 'tip':
-        if (round && !round.locked) { round.tipLevel = 1; tipSheet(); }
+        if (round && !round.locked) { pauseTaskTimer(); round.tipLevel = 1; tipSheet(); }
         break;
       case 'tip-more':
         if (round) { round.tipLevel++; tipSheet(); }
@@ -604,9 +681,11 @@
       case 'tip-close': {
         const host = $('#sheetHost');
         if (host) host.innerHTML = '';
+        resumeTaskTimer();
         break;
       }
       case 'quit': {
+        pauseTaskTimer();
         const test = round && round.mode === 'test';
         confirmDialog(
           test ? 'Test abbrechen?' : 'Üben beenden?',
@@ -625,7 +704,13 @@
     if (/^[0-9]$/.test(e.key)) pressKey(e.key);
     else if (e.key === 'Backspace') pressDel();
     else if (e.key === 'Enter') submit();
-    else if (e.key === 'Escape') { const host = $('#sheetHost'); if (host) host.innerHTML = ''; }
+    else if (e.key === 'Escape') { const host = $('#sheetHost'); if (host && host.innerHTML) { host.innerHTML = ''; resumeTaskTimer(); } }
+  });
+
+  // Wechselt das Kind kurz in eine andere App, läuft der Timer nicht weiter
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) pauseTaskTimer();
+    else if (modalEl.hidden && !(screenEl.querySelector('.sheet'))) resumeTaskTimer();
   });
 
   /* ================= 9  Start ================= */

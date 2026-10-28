@@ -128,6 +128,15 @@ h1, h2, p { margin: 0; }
 .dusk .progress i.bad { background: #FF6B6B; }
 .dusk .progress i.cur { background: var(--cream); }
 
+/* Sichtbarer Timer: Balken schrumpft in der Aufgaben-Zeit und wird zum Schluss rot */
+.timer { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.timer .track { flex: 1; height: 14px; border-radius: 7px; background: var(--tan); overflow: hidden; }
+.timer i { display: block; width: 100%; height: 100%; border-radius: 7px; background: var(--green); transform-origin: left center; animation: drain var(--dur) linear forwards; }
+.timer.paused i { animation-play-state: paused; }
+.timer .clock { flex-shrink: 0; }
+.dusk .timer .track { background: #3E5174; }
+.dusk .timer i { background: #7BD389; }
+
 .hearts { display: flex; gap: 2px; width: 90px; justify-content: flex-end; flex-shrink: 0; }
 .heart-pop { animation: pop .45s; }
 
@@ -278,6 +287,7 @@ h1, h2, p { margin: 0; }
   :root { --key: 52px; }
   .screen { gap: 10px; padding-top: 12px; padding-bottom: 14px; }
   .icon-btn { width: 44px; height: 44px; }
+  .timer .track { height: 10px; }
   .topbar { min-height: 44px; }
   .topbar .spacer { width: 44px; }
   .topbar-title { font-size: 18px; }
@@ -300,6 +310,18 @@ h1, h2, p { margin: 0; }
 @keyframes blink { 50% { opacity: 0; } }
 @keyframes shake { 20%, 60% { transform: translateX(-8px); } 40%, 80% { transform: translateX(8px); } }
 @keyframes pop { 0% { transform: scale(1); } 40% { transform: scale(1.5); } 100% { transform: scale(1); } }
+@keyframes drain {
+  0% { transform: scaleX(1); background: var(--green); }
+  50% { background: var(--green); }
+  70% { background: var(--orange); }
+  85% { background: var(--red); }
+  100% { transform: scaleX(0); background: var(--red); }
+}
 @keyframes fade { from { opacity: 0; } }
 @keyframes rise { from { transform: translateY(40px); opacity: 0; } }
-@media (prefers-reduced-motion: reduce) { * { animation: none !important; } }
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; }
+  /* der Timer-Balken ist eine Information und bleibt */
+  .timer i { animation: drain var(--dur) linear forwards !important; }
+  .timer.paused i { animation-play-state: paused !important; }
+}

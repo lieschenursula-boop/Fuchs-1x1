@@ -1,7 +1,7 @@
 // Service Worker: macht die App offline-fähig.
 // Strategie "erst Cache, dann im Hintergrund aktualisieren":
 // Die App startet sofort aus dem Speicher, Änderungen kommen beim nächsten Öffnen an.
-const CACHE = 'fuchs1x1-v2';
+const CACHE = 'fuchs1x1-v3';
 const ASSETS = [
   './',
   './index.html',
