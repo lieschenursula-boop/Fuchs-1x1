@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Fuchs-Einmaleins">
+<rect width="512" height="512" rx="112" fill="#FFF3DF"/>
+<g transform="translate(256 266) scale(3.5) translate(-60 -56)">
+<path d="M12 50 L18 4 L54 28 Z" fill="#E8710A"/>
+<path d="M108 50 L102 4 L66 28 Z" fill="#E8710A"/>
+<path d="M24 38 L26 16 L42 28 Z" fill="#4A2C17"/>
+<path d="M96 38 L94 16 L78 28 Z" fill="#4A2C17"/>
+<path d="M60 108 C28 108 6 80 8 54 C10 36 36 26 60 26 C84 26 110 36 112 54 C114 80 92 108 60 108 Z" fill="#F08A24"/>
+<path d="M9 60 C28 62 46 78 60 108 C30 108 10 86 9 60 Z" fill="#FFF8EC"/>
+<path d="M111 60 C92 62 74 78 60 108 C90 108 110 86 111 60 Z" fill="#FFF8EC"/>
+<ellipse cx="42" cy="62" rx="6" ry="7.5" fill="#3A2012"/>
+<ellipse cx="78" cy="62" rx="6" ry="7.5" fill="#3A2012"/>
+<circle cx="44" cy="59" r="2.2" fill="#fff"/>
+<circle cx="80" cy="59" r="2.2" fill="#fff"/>
+<circle cx="27" cy="80" r="6" fill="#F4978E" opacity=".55"/>
+<circle cx="93" cy="80" r="6" fill="#F4978E" opacity=".55"/>
+<path d="M52 91 Q60 85 68 91 Q64 99 60 99 Q56 99 52 91 Z" fill="#3A2012"/>
+<path d="M53 103 Q60 108 67 103" stroke="#3A2012" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+</g>
+</svg>

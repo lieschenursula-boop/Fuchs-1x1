@@ -14,6 +14,7 @@ und auch ohne Internet öffnen lässt).
 | **Stufe 3 – Meisterfuchs** | alle Reihen von 1er bis 10er, 10 zufällige Aufgaben |
 | **Sterne** | pro Stufe bis zu 5 Sterne, der beste Versuch bleibt gespeichert: 10 richtig = 5 Sterne, 9 = 4, 8 = 3, 7 = 2, 5 bis 6 = 1, weniger = 0 |
 | **Fuchs beim Üben** | Antippen gibt einen Tipp (bis zu zwei Tipps pro Aufgabe, unbegrenzt oft). Bei einer falschen Antwort erklärt der Fuchs die Lösung mit Punkten |
+| **Timer** | Unsichtbarer Timer: Pro Aufgabe bleiben 5 Sekunden. Läuft die Zeit ab, zählt die Aufgabe als falsch. Beim Üben erscheint „Zu langsam!" und der Fuchs erklärt die Lösung, im Test geht ein Leben verloren. Der Timer pausiert, solange der Fuchs-Tipp oder der Beenden-Dialog offen ist oder die App im Hintergrund liegt |
 | **Fuchs-Test** | 20 schwere Aufgaben (Faktoren 3 bis 9, ohne 5), 3 Leben, jeder Fehler kostet ein Leben, kein Fuchs. Bestes Ergebnis wird gespeichert |
 
 Der Spielstand liegt auf dem jeweiligen Gerät (im Browser-Speicher). Jedes Handy hat also seinen eigenen Stand.
@@ -37,7 +38,7 @@ Der Spielstand liegt auf dem jeweiligen Gerät (im Browser-Speicher). Jedes Hand
 
 Dateien im Repository ersetzen (**Add file** → **Upload files**). Die App holt sich Änderungen
 im Hintergrund: Nach dem nächsten Öffnen ist sie noch alt, beim übernächsten Öffnen neu.
-Wer es sofort braucht, erhöht in `sw.js` die Zahl in `const CACHE = 'fuchs1x1-v1'` (zum Beispiel auf `v2`).
+Wer es sofort braucht, erhöht in `sw.js` die Zahl in `const CACHE = 'fuchs1x1-v2'` (zum Beispiel auf `v3`).
 
 ## Aufbau der Dateien
 
@@ -51,7 +52,7 @@ icons/                  Fuchs-Symbol in mehreren Größen
 fonts/                  Schrift „Fredoka" (offline eingebunden)
 ```
 
-Einstellungen wie Anzahl der Aufgaben, Leben oder die Sterne-Regel stehen ganz oben in `js/app.js`
+Einstellungen wie Anzahl der Aufgaben, Leben, Zeit pro Aufgabe (`TASK_TIME_MS`) oder die Sterne-Regel stehen ganz oben in `js/app.js`
 (Abschnitt „1 Einstellungen"). Zum Weiterbauen eignet sich **Claude Code** gut: einfach den Ordner öffnen
 und beschreiben, was sich ändern soll.
 
